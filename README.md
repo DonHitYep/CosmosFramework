@@ -95,9 +95,10 @@ MessagePack 链接地址：https://github.com/neuecc/MessagePack-CSharp
 
 ## 其他
 
-- V1.1支持使用UnityPackageManager通过git地址添加。V1.1的UPM版本请切换至"UPM_V1.1"分支。
+- V1.1_UPM可以通过UnityPackageManager进行加载。
+加载时请使用："https://github.com/DonnYep/CosmosFramework.git#V1.1_UPM"。
 
-- MVVM的纯C#版本：https://github.com/DonnYep/CosmosMVVM。
+- MVVM的纯C#版本：https://github.com/DonnYep/CosmosMVVM
 
 - CosmosFramework的服务器版本：https://github.com/DonnYep/CosmosFramework4Server 
 服务器版本已提供可靠UDP协议，并集成了KCP协议。TCP持续更新中。内置模块与Unity客户端类似，内置类型都为线程安全类型。
