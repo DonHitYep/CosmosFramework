@@ -7,6 +7,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.IO;
 using System.Collections;
+using UnityEngine.Networking;
+using UnityEngine.Video;
 
 namespace Cosmos
 {
@@ -32,14 +34,7 @@ namespace Cosmos
                     return coroutineHelper;
                 }
             }
-            /// <summary>
-            /// PlayerPrefs持久化前缀
-            /// </summary>
-            public const string Perfix = "Cosmos";
-            /// <summary>
-            /// 持久化数据层路径，可写入
-            /// </summary>
-            public static readonly string PathURL =
+            public static readonly string StreamingAssetsPathURL =
 #if UNITY_ANDROID
         "jar:file://" + Application.dataPath + "!/assets/";
 #elif UNITY_IPHONE
@@ -57,7 +52,6 @@ namespace Cosmos
             {
                 return UnityEngine.Random.Range(min, max);
             }
-
             /// <summary>
             /// 是否约等于另一个浮点数
             /// </summary>
@@ -138,7 +132,7 @@ namespace Cosmos
                 {
                     throw new NotImplementedException($"Type :{type} is not iherit from Component !");
                 }
-                if(go==null)
+                if (go == null)
                     throw new ArgumentNullException($"GameObject is invalid !");
                 return go.GetOrAddComponent(type);
             }
@@ -372,184 +366,38 @@ namespace Cosmos
                 return Parent(go.transform, parentNode);
             }
             /// <summary>
-            /// PlayerPrefs 是否存在key，否则报错显示信息
+            /// 判断是否是路径；
+            /// 需要注意根目录下的文件可能不带/或\符号！
             /// </summary>
-            /// <param name="key"></param>
-            /// <returns></returns>
-            public static bool HasPrefsKey(string key)
+            /// <param name="path">路径str</param>
+            /// <returns>是否是路径</returns>
+            public static bool IsPath(string path)
             {
-                if (PlayerPrefs.HasKey(GetPrefsKey(key)))
-                    return true;
-                else
-                {
-                    Debug.LogError("PlayerPrefs key " + key + "  not exist!");
-                    return false;
-                }
+                return path.Contains("\\") || path.Contains("/");
             }
-            /// <summary>
-            /// PlayerPrefs key
-            /// </summary>
-            /// <param name="key"></param>
-            /// <returns></returns>
-            public static string GetPrefsKey(string key)
-            {
-                Utility.Text.ClearStringBuilder();
-                return Utility.Text.Format(Perfix + "_" + key);
-            }
-            public static int GetPrefsInt(string key)
-            {
-                return PlayerPrefs.GetInt(GetPrefsKey(key));
-            }
-            public static string GetPrefsString(string key)
-            {
-                return PlayerPrefs.GetString(GetPrefsKey(key));
-            }
-            public static float GetPrefsFloat(string key)
-            {
-                return PlayerPrefs.GetFloat(GetPrefsKey(key));
-            }
-            public static void SetPrefsString(string key, string value)
-            {
-                string fullKey = GetPrefsKey(key);
-                PlayerPrefs.DeleteKey(fullKey);
-                PlayerPrefs.SetString(fullKey, value);
-            }
-            public static void SetPrefsInt(string key, int value)
-            {
-                string fullKey = GetPrefsKey(key);
-                PlayerPrefs.DeleteKey(fullKey);
-                PlayerPrefs.SetInt(fullKey, value);
-            }
-            public static void SetPrefsFloat(string key, int value)
-            {
-                string fullKey = GetPrefsKey(key);
-                PlayerPrefs.DeleteKey(fullKey);
-                PlayerPrefs.SetFloat(fullKey, value);
-            }
-            public static void RemovePrefsData(string key)
-            {
-                string fullKey = GetPrefsKey(key);
-                PlayerPrefs.DeleteKey(fullKey);
-            }
-            public static void RemoveAllPrefsData()
-            {
-                PlayerPrefs.DeleteAll();
-            }
-            public static bool IsWifi { get { return Application.internetReachability == NetworkReachability.ReachableViaLocalAreaNetwork; } }
-            public static bool NetAvailable { get { return Application.internetReachability != NetworkReachability.NotReachable; } }
-            /// <summary>
-            /// Unity方法；
-            /// 合并地址,返回Unity的绝对路径；
-            /// 当前环境为：UNITY_STANDALONE_WIN；
-            /// 跨平台地址未编写；
-            /// </summary>
-            /// <param name="relativePath">相对路径</param>
-            /// <returns>返回绝对路径</returns>
-            public static string CombineAppAbsolutePath(params string[] relativePath)
-            {
-                Utility.Text.ClearStringBuilder();
-                for (int i = 0; i < relativePath.Length; i++)
-                {
-                    Utility.Text.StringBuilderCache.Append(relativePath[i] + "/");
-                }
-                return Application.dataPath + "/" + Utility.Text.StringBuilderCache.ToString();
-            }
-            /// <summary>
-            /// Unity方法；
-            ///  合并地址,返回持久化数据的绝对路径；
-            /// 跨平台地址未编写；
-            /// </summary>
-            /// <param name="relativePath">相对路径</param>
-            /// <returns>返回绝对路径</returns>
-            public static string CombineAppPersistentPath(params string[] relativePath)
-            {
-                Utility.Text.ClearStringBuilder();
-                for (int i = 0; i < relativePath.Length; i++)
-                {
-                    Utility.Text.StringBuilderCache.Append(relativePath[i] + "/");
-                }
-                return Application.persistentDataPath + "/" + Utility.Text.StringBuilderCache.ToString();
-            }
-            /// <summary>
-            /// Unity方法；
-            /// 合并地址,返回绝对路径；
-            /// 当前环境为：UNITY_STANDALONE_WIN；
-            /// 跨平台地址未编写；
-            /// </summary>
-            /// <param name="fileFullName">文件的完整名称（包括文件扩展名）</param>
-            /// <param name="relativePath">相对路径</param>
-            /// <returns></returns>
-            // TODO 跨平台地址未编写
-            public static string CombineAppAbsoluteFilePath(string fileFullName, params string[] relativePath)
-            {
-                return CombineAppAbsolutePath(relativePath) + fileFullName;
-            }
-            /// <summary>
-            ///  Unity方法；
-            /// 分解App绝对路径，返回相对路径；
-            /// </summary>
-            /// <param name="absolutePath">绝对路径</param>
-            /// <returns>相对路径</returns>
-            public static string DecomposeAppAbsolutePath(string absolutePath)
-            {
-                return absolutePath.Remove(0, Application.dataPath.Length);
-            }
-            /// <summary>
-            /// 保存截屏到持久化路径；
-            /// </summary>
-            /// <param name="fileName">文件名，需要包含后缀</param>
-            public static void CaptureScreen2PersistentDataPath(string fileName)
-            {
-                var fullPath = Path.Combine(Application.persistentDataPath, fileName);
-                ScreenCapture.CaptureScreenshot(fullPath);
-            }
-            /// <summary>
-            /// 保存截屏；
-            /// </summary>
-            /// <param name="filePath">文件路径</param>
-            /// <param name="fileName">文件名，需要包含后缀</param>
-            public static void CaptureScreen(string filePath, string fileName)
-            {
-                var fullPath = Path.Combine(filePath, fileName);
-                ScreenCapture.CaptureScreenshot(fullPath);
-            }
-            /// <summary>
-            /// 通过相机截取屏幕
-            /// </summary>
-            /// <param name="camera">目标相机</param>
-            /// <param name="fileName">文件的完整名，路径/文件名.后缀名</param>
-            public static void CaptureScreenshotByCamera(Camera camera, string fileName)
-            {
-                var oldRenderTexture = camera.targetTexture;
-                RenderTexture renderTexture;
-                renderTexture = new RenderTexture(Screen.width, Screen.height, 24);
-                camera.targetTexture = renderTexture;
-                camera.Render();
-                Texture2D texture2D = new Texture2D(renderTexture.width, renderTexture.height);
-                RenderTexture.active = renderTexture;
-                texture2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-                texture2D.Apply();
-                byte[] bytes = texture2D.EncodeToPNG();
-                texture2D.Compress(false);
-                texture2D.Apply();
-                RenderTexture.active = null;
-                camera.targetTexture = oldRenderTexture;
-                var fullPath = System.IO.Path.Combine(Application.persistentDataPath, fileName);
-                System.IO.File.WriteAllBytes(fullPath, bytes);
-            }
+
+            #region CaptureScreenshot
             /// <summary>
             /// 通过相机截取屏幕并转换为Texture2D
             /// </summary>
             /// <param name="camera">目标相机</param>
             /// <returns>相机抓取的屏幕Texture2D</returns>
-            public static Texture2D CaptureScreenshotByCameraAsTexture(Camera camera)
+            public static Texture2D CameraScreenshotAsTextureRGB(Camera camera)
+            {
+                return CameraScreenshotAsTexture(camera, TextureFormat.RGB565);
+            }
+            public static Texture2D CameraScreenshotAsTextureRGBA(Camera camera)
+            {
+                return CameraScreenshotAsTexture(camera, TextureFormat.RGBA32);
+            }
+            public static Texture2D CameraScreenshotAsTexture(Camera camera, TextureFormat textureFormat)
             {
                 var oldRenderTexture = camera.targetTexture;
                 RenderTexture renderTexture;
                 renderTexture = new RenderTexture(Screen.width, Screen.height, 24);
                 camera.targetTexture = renderTexture;
                 camera.Render();
-                Texture2D texture2D = new Texture2D(renderTexture.width, renderTexture.height);
+                Texture2D texture2D = new Texture2D(renderTexture.width, renderTexture.height, textureFormat, false);
                 RenderTexture.active = renderTexture;
                 texture2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
                 texture2D.Apply();
@@ -562,12 +410,31 @@ namespace Cosmos
             /// </summary>
             /// <param name="camera">目标相机</param>
             /// <returns>相机抓取的屏幕Texture2D</returns>
-            public static Sprite CaptureScreenshotByCameraAsSprite(Camera camera)
+            public static Sprite CameraScreenshotAsSpriteRGBA(Camera camera)
             {
-                var texture2D = CaptureScreenshotByCameraAsTexture(camera);
+                var texture2D = CameraScreenshotAsTextureRGBA(camera);
                 var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), Vector2.zero);
                 return sprite;
             }
+            public static Sprite CameraScreenshotAsSpriteRGB(Camera camera)
+            {
+                var texture2D = CameraScreenshotAsTextureRGB(camera);
+                var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), Vector2.zero);
+                return sprite;
+            }
+            public static Sprite CameraScreenshotAsSprite(Camera camera, TextureFormat textureFormat)
+            {
+                var texture2D = CameraScreenshotAsTexture(camera, textureFormat);
+                var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), Vector2.zero);
+                return sprite;
+            }
+            public static Texture2D BytesToTexture2D(byte[] bytes, int width, int height)
+            {
+                Texture2D texture2D = new Texture2D(width,height);
+                texture2D.LoadImage(bytes);
+                return texture2D;
+            }
+            #endregion
 
             #region  Coroutine
             public static Coroutine StartCoroutine(Coroutine routine, Action callBack)
@@ -582,9 +449,9 @@ namespace Cosmos
             {
                 return CoroutineHelper.StartCoroutine(handler);
             }
-            public static Coroutine StartCoroutine(Action handler,Action callback)
+            public static Coroutine StartCoroutine(Action handler, Action callback)
             {
-                return CoroutineHelper.StartCoroutine(handler,callback);
+                return CoroutineHelper.StartCoroutine(handler, callback);
             }
             /// <summary>
             /// 延时协程；
@@ -627,6 +494,198 @@ namespace Cosmos
             public static void StopCoroutine(Coroutine routine)
             {
                 CoroutineHelper.StopCoroutine(routine);
+            }
+            #endregion
+
+            #region UnityWebRequest
+            public static Coroutine DownloadTextAsync(string url, Action<float> progress, Action<string> downloadedCallback)
+            {
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequest(UnityWebRequest.Get(url), progress, (UnityWebRequest req) =>
+                 {
+                     downloadedCallback?.Invoke(req.downloadHandler.text);
+                 }));
+            }
+            public static Coroutine DownloadTextsAsync(string[] urls, Action<float> overallProgress, Action<float> progress, Action<string[]> downloadedCallback)
+            {
+                var length = urls.Length;
+                var requests = new List<UnityWebRequest>();
+                for (int i = 0; i < length; i++)
+                {
+                    requests.Add(UnityWebRequest.Get(urls[i]));
+                }
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequests(requests.ToArray(), overallProgress, progress, (reqs) =>
+                {
+                    var reqLength = reqs.Length;
+                    var texts = new string[reqLength];
+                    for (int i = 0; i < reqLength; i++)
+                    {
+                        texts[i] = reqs[i].downloadHandler.text;
+                    }
+                    downloadedCallback?.Invoke(texts);
+                }));
+            }
+            public static Coroutine DownloadTextureAsync(string url, Action<float> progress, Action<Texture2D> downloadedCallback)
+            {
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequest(UnityWebRequestTexture.GetTexture(url), progress, (UnityWebRequest req) =>
+                {
+                    Texture2D texture = DownloadHandlerTexture.GetContent(req);
+                    //var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    downloadedCallback?.Invoke(texture);
+                }));
+            }
+            public static Coroutine DownloadTexturesAsync(string[] urls, Action<float> overallProgress, Action<float> progress, Action<Texture2D[]> downloadedCallback)
+            {
+                var length = urls.Length;
+                var requests = new List<UnityWebRequest>();
+                for (int i = 0; i < length; i++)
+                {
+                    requests.Add(UnityWebRequestTexture.GetTexture(urls[i]));
+                }
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequests(requests.ToArray(), overallProgress, progress, (reqs) =>
+                {
+                    var reqLength = reqs.Length;
+                    var textures = new Texture2D[reqLength];
+                    for (int i = 0; i < reqLength; i++)
+                    {
+                        textures[i] = DownloadHandlerTexture.GetContent(reqs[i]);
+                    }
+                    downloadedCallback?.Invoke(textures);
+                }));
+            }
+            public static Coroutine DownloadAudioAsync(string url, AudioType audioType, Action<float> progress, Action<AudioClip> downloadedCallback)
+            {
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequest(UnityWebRequestMultimedia.GetAudioClip(url, audioType), progress, (UnityWebRequest req) =>
+                {
+                    AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
+                    downloadedCallback?.Invoke(clip);
+                }));
+            }
+            public static Coroutine DownloadAudiosAsync(IDictionary<string, AudioType> urlDict, Action<float> overallProgress, Action<float> progress, Action<AudioClip[]> downloadedCallback)
+            {
+                var length = urlDict.Count;
+                var requests = new List<UnityWebRequest>();
+                foreach (var url in urlDict)
+                {
+                    requests.Add(UnityWebRequestMultimedia.GetAudioClip(url.Key, url.Value));
+                }
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequests(requests.ToArray(), overallProgress, progress, (reqs) =>
+                {
+                    var reqLength = reqs.Length;
+                    var audios = new AudioClip[reqLength];
+                    for (int i = 0; i < reqLength; i++)
+                    {
+                        audios[i] = DownloadHandlerAudioClip.GetContent(reqs[i]);
+                    }
+                    downloadedCallback?.Invoke(audios);
+                }));
+            }
+            public static Coroutine DownloadAssetBundleAsync(string url, Action<float> progress, Action<AssetBundle> downloadedCallback)
+            {
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequest(UnityWebRequestAssetBundle.GetAssetBundle(url), progress, (UnityWebRequest req) =>
+                {
+                    AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(req);
+                    if (bundle)
+                    {
+                        downloadedCallback?.Invoke(bundle);
+                    }
+                }));
+            }
+            public static Coroutine DownloadAssetBundlesAsync(string[] urls, Action<float> overallProgress, Action<float> progress, Action<AssetBundle[]> downloadedCallback)
+            {
+                var length = urls.Length;
+                var requests = new List<UnityWebRequest>();
+                for (int i = 0; i < length; i++)
+                {
+                    requests.Add(UnityWebRequestAssetBundle.GetAssetBundle(urls[i]));
+                }
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequests(requests.ToArray(), overallProgress, progress, (reqs) =>
+                {
+                    var reqLength = reqs.Length;
+                    var assetbundles = new AssetBundle[reqLength];
+                    for (int i = 0; i < reqLength; i++)
+                    {
+                        assetbundles[i] = DownloadHandlerAssetBundle.GetContent(reqs[i]);
+                    }
+                    downloadedCallback?.Invoke(assetbundles);
+                }));
+            }
+            public static Coroutine DownloadAssetBundleBytesAsync(string url, Action<float> progress, Action<byte[]> downloadedCallback)
+            {
+                return Utility.Unity.StartCoroutine(EnumUnityWebRequest(UnityWebRequest.Get(url), progress, (UnityWebRequest req) =>
+                {
+                    var bundleBytes = req.downloadHandler.data;
+                    if (bundleBytes != null)
+                    {
+                        downloadedCallback?.Invoke(bundleBytes);
+                    }
+                }));
+            }
+            public static Coroutine DownloadAssetBundlesBytesAsync(string[] urls, Action<float> overallProgress, Action<float> progress, Action<IList<byte[]>> downloadedCallback)
+            {
+                var length = urls.Length;
+                var requests = new List<UnityWebRequest>();
+                for (int i = 0; i < length; i++)
+                {
+                    requests.Add(UnityWebRequest.Get(urls[i]));
+                }
+                return Utility.Unity.StartCoroutine(EnumBytesUnityWebRequests(requests.ToArray(), overallProgress, progress, (reqs) =>
+                {
+                    var reqLength = reqs.Count;
+                    var bundleByteList = new List<byte[]>();
+                    for (int i = 0; i < reqLength; i++)
+                    {
+                        bundleByteList.Add(reqs[i]);
+                    }
+                    downloadedCallback?.Invoke(bundleByteList);
+                }));
+            }
+            static IEnumerator EnumUnityWebRequest(UnityWebRequest unityWebRequest, Action<float> progress, Action<UnityWebRequest> downloadedCallback)
+            {
+                using (UnityWebRequest request = unityWebRequest)
+                {
+                    request.SendWebRequest();
+                    while (!request.isDone)
+                    {
+                        progress?.Invoke(request.downloadProgress);
+                        yield return null;
+                    }
+                    if (!request.isNetworkError && !request.isHttpError)
+                    {
+                        if (request.isDone)
+                        {
+                            progress?.Invoke(1);
+                            downloadedCallback(request);
+                        }
+                    }
+                    else
+                    {
+                        //throw new ArgumentException($"UnityWebRequest：{request.url } : {request.error } ！");
+                    }
+                }
+            }
+            static IEnumerator EnumUnityWebRequests(UnityWebRequest[] unityWebRequests, Action<float> overallProgress, Action<float> progress, Action<UnityWebRequest[]> downloadedCallback)
+            {
+                var length = unityWebRequests.Length;
+                var count = length - 1;
+                var requestList = new List<UnityWebRequest>();
+                for (int i = 0; i < length; i++)
+                {
+                    overallProgress?.Invoke((float)i / (float)count);
+                    yield return EnumUnityWebRequest(unityWebRequests[i], progress, (request) => { requestList.Add(request); });
+                }
+                downloadedCallback.Invoke(requestList.ToArray());
+            }
+            static IEnumerator EnumBytesUnityWebRequests(UnityWebRequest[] unityWebRequests, Action<float> overallProgress, Action<float> progress, Action< IList< byte[]>> downloadedCallback)
+            {
+                var length = unityWebRequests.Length;
+                var count = length - 1;
+                var requestBytesList = new List<byte[]>();
+                for (int i = 0; i < length; i++)
+                {
+                    overallProgress?.Invoke((float)i / (float)count);
+                    yield return EnumUnityWebRequest(unityWebRequests[i], progress, (request) => { requestBytesList.Add(request.downloadHandler.data); });
+                }
+                downloadedCallback.Invoke(requestBytesList);
             }
             #endregion
         }

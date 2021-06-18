@@ -29,55 +29,8 @@ namespace Cosmos.FSM{
         #endregion
 
         #region Lifecycle
-        public static FSM<T> Create(string name, T owner, params FSMState<T>[] states)
-        {
-            if (states == null || states.Length < 1)
-                throw new ArgumentNullException("FSM owner is invalid");
-            //从引用池获得同类
-            FSM<T> fsm =ReferencePool.Accquire<FSM<T>>();
-            fsm.Name = name;
-            fsm.Owner = owner;
-            fsm.IsDestoryed = false;
-            for (int i = 0; i < states.Length; i++)
-            {
-                if (states[i] == null)
-                    throw new ArgumentNullException("FSM owner is invalid");
-                Type type = states[i].GetType();
-                if (fsm.HasState(type))
-                    throw new ArgumentException("FSM state is is already exist " +states[i].GetType().FullName);
-                else
-                {
-                    states[i].OnInitialization(fsm);
-                    fsm.fsmStateDict.Add(type, states[i]);
-                }
-            }
-            return fsm;
-        }
-        public static FSM<T> Create(string name, T owner, List<FSMState<T>> states)
-        {
-            if (states == null || states.Count < 1)
-                throw new ArgumentNullException("FSM owner is invalid");
-            //从引用池获得同类
-            FSM<T> fsm = ReferencePool.Accquire<FSM<T>>();
-            fsm.Name = name;
-            fsm.Owner = owner;
-            fsm.IsDestoryed = false;
-            for (int i = 0; i < states.Count; i++)
-            {
-                if (states[i] == null)
-                    throw new ArgumentNullException("FSM owner is invalid");
-                Type type = states[i].GetType();
-                if (fsm.HasState(type))
-                    throw new ArgumentException("FSM state is is already exist " + states[i].GetType().FullName);
-                else
-                {
-                    states[i].OnInitialization(fsm);
-                    fsm.fsmStateDict.Add(type, states[i]);
-                }
-            }
-            return fsm;
-        }
-        public void Clear()
+
+        public void Release()
         {
             if (currentState != null)
             {
@@ -141,7 +94,7 @@ namespace Cosmos.FSM{
         /// </summary>
         public  override  void  OnRefresh()
         {
-            if (IsPause)
+            if (Pause)
                 return;
             currentState?.Reason(this);
             currentState?.Action(this);
@@ -277,9 +230,56 @@ namespace Cosmos.FSM{
         public void Renewal()
         {
             if (data != null)
-                data.Clear();
+                data.Release();
         }
-
         #endregion
+        internal static FSM<T> Create(string name, T owner, params FSMState<T>[] states)
+        {
+            if (states == null || states.Length < 1)
+                throw new ArgumentNullException("FSM owner is invalid");
+            //从引用池获得同类
+            FSM<T> fsm = ReferencePool.Accquire<FSM<T>>();
+            fsm.Name = name;
+            fsm.Owner = owner;
+            fsm.IsDestoryed = false;
+            for (int i = 0; i < states.Length; i++)
+            {
+                if (states[i] == null)
+                    throw new ArgumentNullException("FSM owner is invalid");
+                Type type = states[i].GetType();
+                if (fsm.HasState(type))
+                    throw new ArgumentException("FSM state is is already exist " + states[i].GetType().FullName);
+                else
+                {
+                    states[i].OnInitialization(fsm);
+                    fsm.fsmStateDict.Add(type, states[i]);
+                }
+            }
+            return fsm;
+        }
+        internal static FSM<T> Create(string name, T owner, List<FSMState<T>> states)
+        {
+            if (states == null || states.Count < 1)
+                throw new ArgumentNullException("FSM owner is invalid");
+            //从引用池获得同类
+            FSM<T> fsm = ReferencePool.Accquire<FSM<T>>();
+            fsm.Name = name;
+            fsm.Owner = owner;
+            fsm.IsDestoryed = false;
+            for (int i = 0; i < states.Count; i++)
+            {
+                if (states[i] == null)
+                    throw new ArgumentNullException("FSM owner is invalid");
+                Type type = states[i].GetType();
+                if (fsm.HasState(type))
+                    throw new ArgumentException("FSM state is is already exist " + states[i].GetType().FullName);
+                else
+                {
+                    states[i].OnInitialization(fsm);
+                    fsm.fsmStateDict.Add(type, states[i]);
+                }
+            }
+            return fsm;
+        }
     }
 }

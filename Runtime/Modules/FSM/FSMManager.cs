@@ -1,12 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
-using Cosmos;
 namespace Cosmos.FSM
 {
-    /// <summary>
-    /// fsmMgr设计成，轮询是在具体对象山给轮询的，fsmMgr作为一个Fsm的事件中心
-    /// </summary>
+    //================================================
+    //================================================
     [Module]
     internal sealed class FSMManager : Module, IFSMManager
     {
@@ -18,7 +16,7 @@ namespace Cosmos.FSM
         /// <summary>
         /// 状态机群组集合
         /// </summary>
-        Dictionary<Type, IFSMGroup> fsmSetDict;
+        Dictionary<Type, FSMGroup> fsmSetDict;
         List<FSMBase> fsmCache = new List<FSMBase>();
         public int FsmCount { get { return fsmIndividualDict.Count; } }
         #endregion
@@ -28,25 +26,8 @@ namespace Cosmos.FSM
         #region Module
         public override void OnInitialization()
         {
-            fsmSetDict = new Dictionary<Type, IFSMGroup>();
+            fsmSetDict = new Dictionary<Type, FSMGroup>();
             fsmIndividualDict = new Dictionary<Type, FSMBase>(); 
-        }
-        public override void OnRefresh()
-        {
-            if (IsPause)
-                return;
-            if (fsmIndividualDict.Count > 0)
-                foreach (var fsm in fsmIndividualDict)
-                {
-                    fsm.Value.OnRefresh();
-                }
-            if (fsmSetDict.Count > 0)
-            {
-                foreach (var fsmPool in fsmSetDict.Values)
-                {
-                    fsmPool.OnRefresh();
-                }
-            }
         }
         #endregion
         /// <summary>
@@ -162,9 +143,9 @@ namespace Cosmos.FSM
         /// <returns>状态机集合</returns>
         public List<FSMBase> GetFSMSet(Type type)
         {
-            IFSMGroup fsmPool;
+            FSMGroup fsmPool;
             fsmSetDict.TryGetValue(type, out fsmPool);
-            return fsmPool.FSMSet;
+            return fsmPool.FSMList;
         }
         /// <summary>
         /// 通过查找语句获得某一类型的状态机元素
@@ -255,20 +236,21 @@ namespace Cosmos.FSM
         /// </summary>
         /// <typeparam name="T">拥有者类型</typeparam>
         /// <param name="owner">拥有者</param>
-        /// <param name="Individual">是否为独立状态机</param>
+        /// <param name="individual">是否为独立状态机</param>
         /// <param name="states">状态</param>
         /// <returns>创建成功后的状态机</returns>
-        public IFSM<T> CreateFSM<T>(T owner, bool Individual, params FSMState<T>[] states)
+        public IFSM<T> CreateFSM<T>(T owner, bool individual, params FSMState<T>[] states)
            where T : class
         {
-            return CreateFSM(string.Empty, owner, Individual, states);
+            return CreateFSM(string.Empty, owner, individual, states);
         }
-        public IFSM<T> CreateFSM<T>(string name, T owner, bool Individual, params FSMState<T>[] states)
+        //cluster集群；
+        public IFSM<T> CreateFSM<T>(string name, T owner, bool individual, params FSMState<T>[] states)
            where T : class
         {
             Type type = typeof(T);
             FSM<T> fsm = default;
-            if (Individual)
+            if (individual)
             {
                 if (HasIndividualFSM(type))
                     throw new ArgumentException("FSMManager : FSM is exists" + type.ToString());
@@ -294,10 +276,10 @@ namespace Cosmos.FSM
             }
             return fsm;
         }
-        public IFSM<T> CreateFSM<T>(T owner, bool Individual, List<FSMState<T>> states)
+        public IFSM<T> CreateFSM<T>(T owner, bool individual, List<FSMState<T>> states)
            where T : class
         {
-            return CreateFSM(string.Empty, owner, Individual, states);
+            return CreateFSM(string.Empty, owner, individual, states);
         }
         /// <summary>
         /// 创建状态机；
@@ -306,15 +288,15 @@ namespace Cosmos.FSM
         /// <typeparam name="T">拥有者类型</typeparam>
         /// <param name="name">状态机名称</param>
         /// <param name="owner">拥有者</param>
-        /// <param name="Individual">是否为独立状态机</param>
+        /// <param name="individual">是否为独立状态机</param>
         /// <param name="states">状态</param>
         /// <returns>创建成功后的状态机</returns>
-        public IFSM<T> CreateFSM<T>(string name, T owner, bool Individual, List<FSMState<T>> states)
+        public IFSM<T> CreateFSM<T>(string name, T owner, bool individual, List<FSMState<T>> states)
            where T : class
         {
             Type type = typeof(T);
             FSM<T> fsm = default;
-            if (Individual)
+            if (individual)
             {
                 if (HasIndividualFSM(type))
                     throw new ArgumentException("FSMManager : FSM is exists" + type.ToString());
@@ -389,7 +371,7 @@ where T : class
         /// <param name="predicate">查找条件</param>
         public void DestorySetElementFSM(Type type, Predicate<FSMBase> predicate)
         {
-            IFSMGroup fsmPool;
+            FSMGroup fsmPool;
             if (fsmSetDict.TryGetValue(type, out fsmPool))
             {
                 fsmPool.DestoryFSM(predicate);
@@ -415,5 +397,23 @@ where T : class
             fsmSetDict.Clear();
         }
         #endregion
+        [TickRefresh]
+        void OnRefresh()
+        {
+            if (IsPause)
+                return;
+            if (fsmIndividualDict.Count > 0)
+                foreach (var fsm in fsmIndividualDict)
+                {
+                    fsm.Value.OnRefresh();
+                }
+            if (fsmSetDict.Count > 0)
+            {
+                foreach (var fsmPool in fsmSetDict.Values)
+                {
+                    fsmPool.OnRefresh();
+                }
+            }
+        }
     }
 }

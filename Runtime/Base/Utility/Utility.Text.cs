@@ -26,14 +26,10 @@ namespace Cosmos
             /// <returns>格式化后的字符串</returns>
             public static string Format(string format, params object[] args)
             {
-                if (format == null)
-                {
+                if (string.IsNullOrEmpty(format))
                     throw new ArgumentNullException("Format is invalid.");
-                }
                 if (args == null)
-                {
                     throw new ArgumentNullException("Args is invalid.");
-                }
                 StringBuilderCache.Length = 0;
                 StringBuilderCache.AppendFormat(format, args);
                 return StringBuilderCache.ToString();
@@ -72,6 +68,23 @@ namespace Cosmos
                 }
                 return StringBuilderCache.ToString();
             }
+            /// <summary>
+            /// 字段合并；
+            /// </summary>
+            /// <param name="strings">字段数组</param>
+            /// <returns></returns>
+            public static string Combine(params string[] strings)
+            {
+                if (strings == null)
+                    throw new ArgumentNullException("Combine is invalid.");
+                StringBuilderCache.Length = 0;
+                int length = strings.Length;
+                for (int i = 0; i < length; i++)
+                {
+                    StringBuilderCache.Append(strings[i]);
+                }
+                return StringBuilderCache.ToString();
+            }
             public static void ClearStringBuilder()
             {
                 StringBuilderCache.Clear();
@@ -99,7 +112,7 @@ namespace Cosmos
             /// <param name="removeEmptyEntries">是否返回分割后数组中的空元素</param>
             /// <param name="subStringIndex">分割后数组的序号</param>
             /// <returns>分割后的字段</returns>
-            public static string StringSplit(string fullString, String[] separator, bool removeEmptyEntries, int subStringIndex)
+            public static string StringSplit(string fullString, string[] separator, bool removeEmptyEntries, int subStringIndex)
             {
                 string[] stringArray = null;
                 if (removeEmptyEntries)
@@ -117,7 +130,7 @@ namespace Cosmos
             /// <param name="count">要返回的子字符串的最大数量</param>
             /// <param name="removeEmptyEntries">是否移除空实体</param>
             /// <returns>分割后的字段</returns>
-            public static string StringSplit(string fullString, String[] separator, int count, bool removeEmptyEntries)
+            public static string StringSplit(string fullString, string[] separator, int count, bool removeEmptyEntries)
             {
                 string[] stringArray = null;
                 if (removeEmptyEntries)
@@ -132,7 +145,7 @@ namespace Cosmos
             /// <param name="fullString">分割字符串</param>
             /// <param name="separator">new string[]{"."}</param>
             /// <returns>分割后的字段数组</returns>
-            public static string[] StringSplit(string fullString, String[] separator)
+            public static string[] StringSplit(string fullString, string[] separator)
             {
                 string[] stringArray = null;
                 stringArray = fullString.Split(separator, StringSplitOptions.None);
@@ -154,6 +167,12 @@ namespace Cosmos
                 }
                 return count;
             }
+            public static int StringLength(string context)
+            {
+                if (string.IsNullOrEmpty(context))
+                    throw new ArgumentNullException("context is invalid.");
+                return context.Length;
+            }
             /// <summary>
             /// 获取内容在UTF8编码下的字节长度；
             /// </summary>
@@ -169,7 +188,7 @@ namespace Cosmos
             /// <param name="context">传入的内容</param>
             /// <param name="values">需要检测的字符数组</param>
             /// <returns>是否包含</returns>
-            public static bool StringContans(string context,string[] values)
+            public static bool StringContans(string context, string[] values)
             {
                 var length = values.Length;
                 for (int i = 0; i < length; i++)
@@ -187,10 +206,32 @@ namespace Cosmos
                     return false;
                 return true;
             }
-            public static void IsStringValid(string context,string exceptionContext)
+            public static void IsStringValid(string context, string exceptionContext)
             {
                 if (!string.IsNullOrEmpty(context))
                     throw new ArgumentNullException(exceptionContext);
+            }
+            /// <summary>
+            /// 多字符替换；
+            /// </summary>
+            /// <param name="context">需要修改的内容</param>
+            /// <param name="oldContext">需要修改的内容</param>
+            /// <param name="newContext">修改的新内容</param>
+            /// <returns>修改后的内容</returns>
+            public static string Replace(string context, string[] oldContext, string newContext)
+            {
+                if(string.IsNullOrEmpty(context))
+                    throw new ArgumentNullException("context is invalid.");
+                if(oldContext==null)
+                    throw new ArgumentNullException("oldContext is invalid.");
+                if (string.IsNullOrEmpty(newContext))
+                    throw new ArgumentNullException("newContext is invalid.");
+                var length = oldContext.Length;
+                for (int i = 0; i < length; i++)
+                {
+                    context= context.Replace(oldContext[i], newContext);
+                }
+                return context;
             }
         }
     }

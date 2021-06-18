@@ -1,42 +1,87 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Cosmos;
-using Cosmos.QuarkAsset;
+using Cosmos.Quark;
+using UnityEditor;
 using UnityEngine;
 
 namespace Cosmos.CosmosEditor
 {
     public static partial class QuarkAssetEditorUtility
     {
-        static Dictionary<string, LinkedList<QuarkAssetObject>> EncodeSchema(QuarkAssetDataset assetData)
+        static Dictionary<string, List<string>> dependenciesMap = new Dictionary<string, List<string>>();
+        public static void BuildAssetBundle(BuildTarget target, string outPath, BuildAssetBundleOptions options = BuildAssetBundleOptions.ChunkBasedCompression)
         {
-            var lnkDict = new Dictionary<string, LinkedList<QuarkAssetObject>>();
-            var length = assetData.QuarkAssetObjectList.Count;
-            for (int i = 0; i < length; i++)
+            AssetDatabase.RemoveUnusedAssetBundleNames();
+            if (!Directory.Exists(outPath))
             {
-                var name = assetData.QuarkAssetObjectList[i].AssetName;
-                if (!lnkDict.TryGetValue(name, out var lnkList))
+                Directory.CreateDirectory(outPath);
+            }
+            BuildPipeline.BuildAssetBundles(outPath, options | BuildAssetBundleOptions.DeterministicAssetBundle, target);
+        }
+        /// <summary>
+        /// 获取除自生以外的依赖资源的所有路径；
+        /// </summary>
+        /// <param name="path">目标资源地址</param>
+        /// <returns>依赖的资源路径</returns>
+        public static string[] GetDependencises(string path)
+        {
+            dependenciesMap.Clear();
+            //全部小写
+            List<string> list = null;
+            if (!dependenciesMap.TryGetValue(path, out list))
+            {
+                list = AssetDatabase.GetDependencies(path).Select((s) => s.ToLower()).ToList();
+                list.Remove(path.ToLower());
+                //检测依赖路径
+                CheckAssetsPath(list);
+                dependenciesMap[path] = list;
+            }
+            return list.ToArray();
+        }
+        /// <summary>
+        /// 获取可以打包的资源
+        /// </summary>
+        static void CheckAssetsPath(List<string> list)
+        {
+            if (list.Count == 0)
+                return;
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                var path = list[i];
+                //文件不存在,或者是个文件夹移除
+                if (!File.Exists(path) || Directory.Exists(path))
                 {
-                    var lnk = new LinkedList<QuarkAssetObject>();
-                    lnk.AddLast(assetData.QuarkAssetObjectList[i]);
-                    lnkDict.Add(name, lnk);
+                    list.RemoveAt(i);
+                    continue;
                 }
-                else
+                //判断路径是否为editor依赖
+                if (path.Contains("/editor/"))
                 {
-                    lnkList.AddLast(assetData.QuarkAssetObjectList[i]);
+                    list.RemoveAt(i);
+                    continue;
+                }
+                //特殊后缀
+                var ext = Path.GetExtension(path).ToLower();
+                if (ext == ".cs" || ext == ".js" || ext == ".dll")
+                {
+                    list.RemoveAt(i);
+                    continue;
                 }
             }
-            return lnkDict;
         }
         [RuntimeInitializeOnLoadMethod]
         static void InitQuarkAssetData()
         {
-            var quarkAssetData = QuarkAssetEditorUtility.Dataset.QuarkAssetDatasetInstance;
-            var assetDict = EncodeSchema(quarkAssetData);
-            QuarkUtility.SetData(quarkAssetData, assetDict);
+            if (QuarkUtility.QuarkAssetLoadMode == QuarkAssetLoadMode.AssetDatabase)
+            {
+                var quarkAssetData = QuarkAssetEditorUtility.Dataset.QuarkAssetDatasetInstance;
+                QuarkUtility.SetAssetDatabaseModeData(quarkAssetData);
+            }
         }
     }
 }

@@ -6,29 +6,37 @@ using System.Reflection;
 
 namespace Cosmos
 {
-    public class CosmosEntry 
+    public class CosmosEntry
     {
+        /// <summary>
+        /// 在初始化时是否打印Module的debug信息；
+        /// </summary>
+        public static bool PrintModulePreparatory
+        {
+            get { return GameManager.PrintModulePreparatory; }
+            set { GameManager.PrintModulePreparatory = value; }
+        }
         public static event Action FixedRefreshHandler
         {
-            add { GameManager.FixedRefreshHandler+= value; }
+            add { GameManager.FixedRefreshHandler += value; }
             remove { GameManager.FixedRefreshHandler -= value; }
         }
         public static event Action LateRefreshHandler
         {
-            add { GameManager.LateRefreshHandler+= value; }
+            add { GameManager.LateRefreshHandler += value; }
             remove { GameManager.LateRefreshHandler -= value; }
         }
         public static event Action RefreshHandler
         {
-            add { GameManager.RefreshHandler+= value; }
-            remove { GameManager.RefreshHandler -= value; }
+            add { GameManager.TickRefreshHandler += value; }
+            remove { GameManager.TickRefreshHandler -= value; }
         }
         /// <summary>
         /// 时间流逝轮询委托；
         /// </summary>
-        public static event Action<long> ElapseRefreshHandler
+        public static event Action<float> ElapseRefreshHandler
         {
-            add { GameManager.ElapseRefreshHandler+= value; }
+            add { GameManager.ElapseRefreshHandler += value; }
             remove { GameManager.ElapseRefreshHandler -= value; }
         }
         public static IAudioManager AudioManager { get { return GameManager.GetModule<IAudioManager>(); } }
@@ -45,6 +53,8 @@ namespace Cosmos
         public static IEntityManager EntityManager { get { return GameManager.GetModule<IEntityManager>(); } }
         public static IEventManager EventManager { get { return GameManager.GetModule<IEventManager>(); } }
         public static ISceneManager SceneManager { get { return GameManager.GetModule<ISceneManager>(); } }
+        public static IWebRequestManager WebRequestManager { get { return GameManager.GetModule<IWebRequestManager>(); } }
+        public static IDownloadManager DownloadManager { get { return GameManager.GetModule<IDownloadManager>(); } }
 
         public static GameObject AudioMount { get { return GameManager.GetModuleMount<IAudioManager>(); } }
         public static GameObject ControllerMount { get { return GameManager.GetModuleMount<IControllerManager>(); } }
@@ -102,12 +112,12 @@ namespace Cosmos
         public static void LaunchAssemblyHelpers(System.Reflection.Assembly assembly)
         {
             var debugHelper = Utility.Assembly.GetInstanceByAttribute<ImplementProviderAttribute, IDebugHelper>(assembly);
-            if (debugHelper!= null)
+            if (debugHelper != null)
             {
                 Utility.Debug.SetHelper(debugHelper);
             }
             var jsonHelper = Utility.Assembly.GetInstanceByAttribute<ImplementProviderAttribute, IJsonHelper>(assembly);
-            if (jsonHelper!= null)
+            if (jsonHelper != null)
             {
                 Utility.Json.SetHelper(jsonHelper);
             }
@@ -125,12 +135,13 @@ namespace Cosmos
         {
             GameManager.InitAppDomainModule();
         }
+
         /// <summary>
         /// 初始化目标程序集下的Module；
         /// 注意：初始化尽量只执行一次！！！
         /// </summary>
         /// <param name="assemblies">查询的目标程序集</param>
-        public static void LaunchAssemblyModules(params System.Reflection .Assembly[]  assemblies)
+        public static void LaunchAssemblyModules(params System.Reflection.Assembly[] assemblies)
         {
             GameManager.InitAssemblyModule(assemblies);
         }

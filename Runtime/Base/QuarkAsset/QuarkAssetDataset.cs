@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-namespace Cosmos.QuarkAsset
+namespace Cosmos.Quark 
 {
     /// <summary>
     /// QuarkAssetDataset用于在Editor Runtime快速开发时使用；
@@ -11,12 +11,14 @@ namespace Cosmos.QuarkAsset
     [Serializable]
     public class QuarkAssetDataset : DatasetBase
     {
-        public QuarkAssetLoadMode QuarkAssetLoadMode;
+        /// <summary>
+        /// 包含的路径；
+        /// </summary>
+        public List<string> IncludeDirectories;
         public int QuarkAssetCount;
-        public List<QuarkAssetObject> QuarkAssetObjectList;
+        public List<QuarkAssetDatabaseObject> QuarkAssetObjectList;
         public override void Dispose()
         {
-            QuarkAssetLoadMode = QuarkAssetLoadMode.None;
             QuarkAssetCount = 0;
             QuarkAssetObjectList?.Clear();
         }

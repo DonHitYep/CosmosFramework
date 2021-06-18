@@ -10,7 +10,11 @@ namespace Cosmos
 {
     public interface ISceneManager : IModuleManager
     {
-        void SetHelper(ISceneHelper sceneHelper);
+        /// <summary>
+        /// 异步设置场景加载helper；
+        /// </summary>
+        /// <param name="sceneHelper">自定义实现的ISceneHelper</param>
+        void SetHelperAsync(ISceneHelper sceneHelper);
         /// <summary>
         /// 同步加载场景
         /// </summary>

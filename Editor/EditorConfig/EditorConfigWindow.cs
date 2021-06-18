@@ -18,23 +18,23 @@ namespace Cosmos.CosmosEditor
         public static void OpenWindow()
         {
             var window = GetWindow<EditorConfigWindow>();
-            ((EditorWindow)window).maxSize = CosmosEditorUtility.CosmosMaxWinSize;
-            ((EditorWindow)window).minSize = CosmosEditorUtility.CosmosDevWinSize;
+            ((EditorWindow)window).maxSize = EditorUtil.CosmosMaxWinSize;
+            ((EditorWindow)window).minSize = EditorUtil.CosmosDevWinSize;
         }
         [InitializeOnLoadMethod]
         public static void LoadData()
         {
             try
             {
-                EditorConfigData = CosmosEditorUtility.GetData<EditorConfigData>(EditorConfigFileName);
+                EditorConfigData = EditorUtil.GetData<EditorConfigData>(EditorConfigFileName);
             }
             catch
             {
                 EditorConfigData = new EditorConfigData();
-                CosmosEditorUtility.SaveData(EditorConfigFileName, EditorConfigData);
+                EditorUtil.SaveData(EditorConfigFileName, EditorConfigData);
             }
         }
-        static readonly string EditorConfigFileName = "EditorConfig.Json";
+        static readonly string EditorConfigFileName = "EditorConfig.json";
         public EditorConfigWindow()
         {
             this.titleContent = new GUIContent("EditorConfig");
@@ -43,55 +43,50 @@ namespace Cosmos.CosmosEditor
         {
             DrawWindow();
         }
+        private void OnDisable()
+        {
+            SaveEditorConfigData();
+        }
         void DrawWindow()
         {
-            GUILayout.BeginVertical("box");
-            EditorGUILayout.Space();
-            GUI.color = Color.green;
-            EditorGUILayout.HelpBox("log日志输出。", MessageType.None, true);
-            #region CustomDrawEditor
-            DrawDebug();
-            DrawScriptHeader();
-            #endregion
-            GUI.color = Color.white;
-            EditorGUILayout.Space();
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(8);
-            if (GUILayout.Button("Set", GUILayout.Height(32)))
+            EditorUtil.DrawVerticalContext(() =>
             {
-                SetButtonClick();
-            }
-            GUILayout.Space(128);
-            if (GUILayout.Button("Reset", GUILayout.Height(32)))
-            {
-                ResetButtonClick();
-            }
-            GUILayout.Space(8);
-            GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
+                EditorGUILayout.Space();
+                GUI.color = Color.green;
+                EditorGUILayout.HelpBox("log日志输出。", MessageType.None, true);
+                #region CustomDrawEditor
+                DrawDebug();
+                DrawScriptHeader();
+                #endregion
+                GUI.color = Color.white;
+                EditorGUILayout.Space();
+                EditorUtil.DrawHorizontalContext(() =>
+                {
+                    if (GUILayout.Button("Reset"))
+                    {
+                        ResetButtonClick();
+                    }
+                });
+            });
         }
-        void SetButtonClick()
+        void SaveEditorConfigData()
         {
             try
             {
-                CosmosEditorUtility.SaveData(EditorConfigFileName, EditorConfigData == null ? new EditorConfigData() : EditorConfigData);
-                CosmosEditorUtility.LogInfo("设置 CosmosFramework EditorConfigData 成功 ");
+                EditorUtil.SaveData(EditorConfigFileName, EditorConfigData == null ? new EditorConfigData() : EditorConfigData);
             }
-            catch(Exception e)
-            {
-                CosmosEditorUtility.LogError("设置 CosmosFramework EditorConfigData 失败 : "+e);
-            }
+            catch{}
         }
         void ResetButtonClick()
         {
             try
             {
-                EditorConfigData =CosmosEditorUtility.GetData<EditorConfigData>(EditorConfigFileName);
-                CosmosEditorUtility.LogInfo("重置 CosmosFramework EditorConfigData 成功");
+                EditorConfigData =EditorUtil.GetData<EditorConfigData>(EditorConfigFileName);
+                EditorUtil.Debug.LogInfo("重置 CosmosFramework EditorConfigData 成功");
             }
             catch (Exception e)
             {
-                CosmosEditorUtility.LogError("重置 CosmosFramework EditorConfigData 失败: " + e);
+                EditorUtil.Debug.LogError("重置 CosmosFramework EditorConfigData 失败: " + e);
             }
         }
         #region ScriptHeader
@@ -153,7 +148,7 @@ namespace Cosmos.CosmosEditor
                 GUILayout.Space(128);
                 if (GUILayout.Button("设为默认", GUILayout.Height(32)))
                 {
-                    EditorConfigData.LogOutputDirectory = CosmosEditorUtility.GetDefaultLogOutputDirectory();
+                    EditorConfigData.LogOutputDirectory = EditorUtil.GetDefaultLogOutputDirectory();
                 }
                 GUILayout.Space(8);
                 GUILayout.EndHorizontal();
